@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <title>经理自助抽签系统</title>
+</head>
+
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto p-8">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">经理自助抽签系统</h1>
+        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">输入密码访问设置和结果页面</h2>
+            <input type="password" id="passwordInput" placeholder="请输入密码"
+                class="border border-gray-300 p-2 rounded mb-4 w-full">
+            <button id="checkPasswordButton" class="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600">验证密码</button>
+        </div>
+        <div id="settingsAndResults" class="hidden bg-white p-6 rounded-lg shadow-md mb-6">
+            <div class="mb-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">负责人设置经理和负责区域</h2>
+                <div class="flex mb-4">
+                    <input type="text" id="managerNameSetting" placeholder="经理姓名"
+                        class="border border-gray-300 p-2 rounded-l w-1/3">
+                    <input type="text" id="managerAreaSetting" placeholder="负责区域"
+                        class="border border-gray-300 p-2 border-l-0 w-1/3">
+                    <button id="addManagerSetting"
+                        class="bg-blue-500 text-white p-2 rounded-r hover:bg-blue-600 w-1/3">添加</button>
+                </div>
+                <div id="managerSettingList" class="mt-4"></div>
+            </div>
+            <div>
+                <button id="viewAllResultsButton" class="bg-purple-500 text-white p-2 rounded hover:bg-purple-600">查看抽奖总结果</button>
+                <div id="allResults" class="mt-4 hidden"></div>
+            </div>
+            <button id="resetButton" class="bg-red-500 text-white p-2 rounded hover:bg-red-600 mt-4">重置</button>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">经理自助抽签</h2>
+            <input type="text" id="managerNameLottery" placeholder="请输入您的姓名"
+                class="border border-gray-300 p-2 rounded mb-4 w-full">
+            <button id="startLotteryButton" class="bg-green-500 text-white p-2 rounded hover:bg-green-600">开始抽签</button>
+            <div id="lotteryResult" class="mt-4"></div>
+        </div>
+    </div>
+    <script>
+        const managers = [];
+        const areas = [];
+        const drawnManagers = [];
+        const lotteryResults = [];
+
+        const passwordInput = document.getElementById('passwordInput');
+        const checkPasswordButton = document.getElementById('checkPasswordButton');
+        const settingsAndResults = document.getElementById('settingsAndResults');
+        const addManagerSettingButton = document.getElementById('addManagerSetting');
+        const managerNameSettingInput = document.getElementById('managerNameSetting');
+        const managerAreaSettingInput = document.getElementById('managerAreaSetting');
+        const managerSettingList = document.getElementById('managerSettingList');
+        const managerNameLotteryInput = document.getElementById('managerNameLottery');
+        const startLotteryButton = document.getElementById('startLotteryButton');
+        const lotteryResult = document.getElementById('lotteryResult');
+        const viewAllResultsButton = document.getElementById('viewAllResultsButton');
+        const allResults = document.getElementById('allResults');
+        const resetButton = document.getElementById('resetButton');
+
+        checkPasswordButton.addEventListener('click', () => {
+            const password = passwordInput.value;
+            if (password === '0717') {
+                settingsAndResults.classList.remove('hidden');
+            } else {
+                alert('密码错误，请重新输入。');
+            }
+        });
+
+        addManagerSettingButton.addEventListener('click', () => {
+            const managerName = managerNameSettingInput.value;
+            const managerArea = managerAreaSettingInput.value;
+            if (managerName && managerArea) {
+                managers.push({ name: managerName, area: managerArea });
+                areas.push(managerArea);
+                managerSettingList.innerHTML += `<p>${managerName} - 负责区域: ${managerArea}</p>`;
+                managerNameSettingInput.value = '';
+                managerAreaSettingInput.value = '';
+            }
+        });
+
+        startLotteryButton.addEventListener('click', () => {
+            const currentManagerName = managerNameLotteryInput.value;
+            if (drawnManagers.includes(currentManagerName)) {
+                lotteryResult.innerHTML = '<p>您已经抽过签了，不能再次抽签。</p>';
+                return;
+            }
+            const currentManager = managers.find(manager => manager.name === currentManagerName);
+            if (!currentManager) {
+                lotteryResult.innerHTML = '<p>未找到该经理信息，请检查姓名。</p>';
+                return;
+            }
+            let availableAreas = areas.filter(area => area!== currentManager.area);
+            if (availableAreas.length === 0) {
+                // 若没有非自己负责的区域，直接从剩余区域中选一个
+                availableAreas = [...areas];
+            }
+            const randomIndex = Math.floor(Math.random() * availableAreas.length);
+            const selectedArea = availableAreas[randomIndex];
+            lotteryResult.innerHTML = `<p>您（${currentManagerName}）抽到了: ${selectedArea}</p>`;
+            const indexToRemove = areas.indexOf(selectedArea);
+            areas.splice(indexToRemove, 1);
+            drawnManagers.push(currentManagerName);
+            lotteryResults.push({ manager: currentManagerName, area: selectedArea });
+        });
+
+        viewAllResultsButton.addEventListener('click', () => {
+            if (lotteryResults.length === 0) {
+                allResults.innerHTML = '<p>目前还没有抽奖结果。</p>';
+            } else {
+                let resultHTML = '<h2 class="text-xl font-bold text-gray-800 mb-2">抽奖总结果</h2>';
+                resultHTML += '<ul class="list-disc list-inside">';
+                lotteryResults.forEach(result => {
+                    resultHTML += `<li>${result.manager} 抽到了: ${result.area}</li>`;
+                });
+                resultHTML += '</ul>';
+                allResults.innerHTML = resultHTML;
+            }
+            allResults.classList.toggle('hidden');
+        });
+
+        resetButton.addEventListener('click', () => {
+            managers.length = 0;
+            areas.length = 0;
+            drawnManagers.length = 0;
+            lotteryResults.length = 0;
+            managerSettingList.innerHTML = '';
+            lotteryResult.innerHTML = '';
+            allResults.innerHTML = '';
+            allResults.classList.add('hidden');
+            settingsAndResults.classList.add('hidden');
+            passwordInput.value = '';
+        });
+    </script>
+</body>
+
+</html>    
